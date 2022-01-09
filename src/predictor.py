@@ -2,7 +2,10 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 
 import pandas as pd
-import sklearn.tree as sk
+import sklearn.ensemble as sk
+import matplotlib.pyplot as plt
+from matplotlib.pylab import rcParams
+
 
 class DataEngine:
 
@@ -20,8 +23,8 @@ class DataEngine:
         X = self.frame[csv_col_names]
         self.train_X, self.val_X, self.train_y, self.val_y = train_test_split(X, y, random_state=0)
 
-    def predict(self):
-        stock_model = sk.DecisionTreeRegressor(random_state=1)
+    def predict(self, leafs: int):
+        stock_model = sk.RandomForestRegressor(random_state=1, max_leaf_nodes=leafs)
         stock_model.fit(self.train_X, self.train_y)
         return stock_model
 
@@ -30,11 +33,14 @@ class DataEngine:
 if __name__ == '__main__':
     features = ['Close', 'Volume']
     engien = DataEngine('aapl.us.txt', features)
-    predictions = engien.predict().predict(engien.val_X)
-    print(engien.val_y)
-    print(predictions)
-
-    print(mean_absolute_error(engien.val_y, predictions))
+    nodes_count = list(range(100, 10000, 100))
+    print(nodes_count)
+    for i in nodes_count:
+        predictions = engien.predict(i).predict(engien.val_X)
+        print(mean_absolute_error(engien.val_y, predictions))
+        plt.scatter(engien.val_y[:100], predictions[:100], marker='o',  label='True')
+        # plt.plot(predictions, label='Predictions', color='red')
+        plt.show()
 
 
 
