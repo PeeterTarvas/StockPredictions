@@ -1,7 +1,3 @@
-import inline as inline
-import matplotlib
-from sklearn.metrics import mean_absolute_error
-from sklearn.model_selection import train_test_split
 
 import pandas as pd
 import sklearn.ensemble as sk
@@ -9,8 +5,6 @@ import sklearn.pipeline as pipe
 import matplotlib.pyplot as plt
 import sklearn.impute as impute
 import sklearn.model_selection as select
-
-
 
 class DataEngine:
 
