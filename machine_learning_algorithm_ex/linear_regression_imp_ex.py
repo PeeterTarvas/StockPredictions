@@ -1,3 +1,4 @@
+import datetime
 import math
 
 import numpy as np
@@ -18,11 +19,12 @@ class Regression:
 
     def __init__(self, file_name: str):
         self.frame = self.frame_data(file_name)
-        self._frame = self.frame[['Open', 'High', 'Low', 'Close', 'Volume']]
+        self._frame = self.frame[['Open', 'High', 'Low', 'Close', 'Volume', 'Date']]
         self.forecast_col = 'Close'
         self.calc_percent_change()
         self.refactor_new_frame()
         self.X_lately = []
+        self.dates = pd.DataFrame(data=self.frame['Date'])
         self.accuracy = 0
 
     def calc_percent_change(self):
@@ -37,7 +39,7 @@ class Regression:
         self._frame = imputated_frame
 
     def forecast(self) -> int:
-        forecast_out = int(math.ceil(0.01 * len(self._frame)))
+        forecast_out = int(math.ceil(0.001 * len(self._frame)))
         self._frame['label'] = self._frame[self.forecast_col].shift(-forecast_out)  # Shift 10% dataframe
         return forecast_out
 
@@ -65,6 +67,7 @@ class Regression:
         model = RandomForestRegressor(random_state=0, n_estimators=350, max_leaf_nodes=100)
         model.fit(data[0], data[2])
         self.accuracy = model.score(data[1], data[3])
+        print(self.accuracy)
         #    print(f'{i}: {accuracy}')
         #    rang[i] = accuracy
 
@@ -75,6 +78,37 @@ class Regression:
 
     def predict(self, model, value):
         return model.predict(value)
+
+    def plot(self):
+        model = self.linear_regression()
+        value = self.X_lately
+        prediction = self.predict(model, value)
+        self._frame['Date'] = self.dates
+        self._frame['forecast'] = np.nan
+        last_date = self._frame.iloc[-1].Date
+        last_unix = datetime.datetime.strptime(last_date, '%Y-%m-%d').timestamp()
+        one_day_in_sec = 86400
+        next_day = last_unix + one_day_in_sec
+
+        for i in prediction:
+            next_date = datetime.datetime.fromtimestamp(next_day)
+            next_day += one_day_in_sec
+            self._frame.loc[next_date] = [np.nan for _ in range(len(self._frame.columns) - 1)] + [i]
+
+        print(self._frame)
+
+        self._frame.Close.plot()
+        self._frame.forecast.plot()
+        plt.legend(loc=4)
+        plt.xlabel('Date')
+        plt.ylabel('Price')
+        plt.show()
+
+
+
+
+
+
 
 
 
@@ -87,8 +121,5 @@ class Regression:
 if __name__ == '__main__':
     reg = Regression('aapl.us.txt')
     model = reg.linear_regression()
-    prediction = reg.predict(model, reg.X_lately)
-    pred_size = len(prediction)
-    plt.plot(list(range(pred_size)), prediction)
-    plt.show()
+    reg.plot()
 
