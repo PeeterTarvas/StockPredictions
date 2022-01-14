@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import sklearn.impute as impute
 import sklearn.model_selection as select
 
+
 class DataEngine:
 
     def __init__(self, csv_name: str, csv_col_names):
@@ -45,6 +46,8 @@ if __name__ == '__main__':
         test = engien.test_different_CV(model, engien.X, engien.y, 5)
         results[i] = test
         print(results)
+    model = engien.create_model_as_pipeline(200)
+    print(engien.predict(model, engien.y))
     plt.plot(list(results.keys()), list(results.values()))
     plt.show()
 
