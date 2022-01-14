@@ -8,6 +8,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+import matplotlib.style as style
+
+style.use('ggplot')
 
 
 
@@ -19,6 +22,8 @@ class Regression:
         self.forecast_col = 'Close'
         self.calc_percent_change()
         self.refactor_new_frame()
+        self.X_lately = []
+        self.accuracy = 0
 
     def calc_percent_change(self):
         self._frame['High_Low_chnge_pct'] = ((self._frame['High'] - self._frame['Low']) / self._frame['Low'] * 100)
@@ -34,7 +39,6 @@ class Regression:
     def forecast(self) -> int:
         forecast_out = int(math.ceil(0.01 * len(self._frame)))
         self._frame['label'] = self._frame[self.forecast_col].shift(-forecast_out)  # Shift 10% dataframe
-        self._frame.dropna(inplace=True)
         return forecast_out
 
     def def_X_y(self):
@@ -44,7 +48,11 @@ class Regression:
      :return:
      """
         forecast = self.forecast()
+
         X = np.array(self._frame.drop(["label"], axis=1))
+        X = X[:-forecast]
+        self.X_lately= X[-forecast:]
+        self._frame.dropna(inplace=True)
         y = np.array(self._frame["label"])
         X = preprocessing.scale(X)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
@@ -56,7 +64,7 @@ class Regression:
         # for i in list(range(1, 400, 25)):
         model = RandomForestRegressor(random_state=0, n_estimators=350, max_leaf_nodes=100)
         model.fit(data[0], data[2])
-        #    accuracy = model.score(data[1], data[3])
+        self.accuracy = model.score(data[1], data[3])
         #    print(f'{i}: {accuracy}')
         #    rang[i] = accuracy
 
@@ -65,6 +73,12 @@ class Regression:
 
         return model
 
+    def predict(self, model, value):
+        return model.predict(value)
+
+
+
+
 
     def frame_data(self, csv_name: str):
         return pd.read_csv('/home/peeter/PycharmProjects/finData/resources/Data/Stocks/' + csv_name)
@@ -72,4 +86,9 @@ class Regression:
 
 if __name__ == '__main__':
     reg = Regression('aapl.us.txt')
-    print(reg.linear_regression())
+    model = reg.linear_regression()
+    prediction = reg.predict(model, reg.X_lately)
+    pred_size = len(prediction)
+    plt.plot(list(range(pred_size)), prediction)
+    plt.show()
+
