@@ -15,7 +15,7 @@ class DataEngine:
         self.set_X_y(csv_col_names)
 
     def frame_data(self, csv_name: str):
-        return pd.read_csv('/home/peeter/PycharmProjects/finData/resources/Data/Stocks/' + csv_name)
+        return pd.read_csv('/home/peeter/PycharmProjects/StockPredictions/resources/Data/Stocks/' + csv_name)
 
 
     def set_X_y(self, csv_col_names):
