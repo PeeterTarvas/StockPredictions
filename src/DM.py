@@ -10,9 +10,26 @@ class Analyze:
 
 
     def normalize(self):
+        normalized = np.empty(shape=(len(self.data), len(self.data[0])))
+        normalized.fill(0)
+        min_max_dict: dict = {}
         for i in list(range(len(self.data[0]))):
             cols = self.data[:, i]
-            print(sorted(cols))
+            cols = sorted(cols)
+            minim = cols[0]
+            maxim = cols[-1]
+            min_max_dict[i] = [minim, maxim]
+        for j in list(range(len(normalized))):
+            for i in list(range(len(normalized[j]))):
+                minim = min_max_dict[i][0]
+                maxim = min_max_dict[i][1]
+                normal = ((self.data[j][i] - minim) / (maxim - minim))
+
+                normalized[j][i] = normal
+
+        print(normalized)
+
+
 
 
 if __name__ == '__main__':
