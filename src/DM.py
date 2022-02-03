@@ -3,7 +3,7 @@ import numpy as np
 
 
 
-class Analyze:
+class Categorizer:
 
     def __init__(self, data):
         self.data = data
@@ -22,6 +22,7 @@ class Analyze:
             for i in list(range(len(normalized[j]))):
                 minim = min_max_dict[i][0]
                 maxim = min_max_dict[i][1]
+                # Minmax
                 normal = ((data[j][i] - minim) / (maxim - minim))
                 normalized[j][i] = normal
         return normalized
@@ -36,6 +37,9 @@ class Analyze:
         return segments_dist
 
     def calc_euclidian_dist(self, arr1, arr2):
+        """
+        Calculates euclidian dist between 2 arrays
+        """
         dist = 0
         for i in list(range(len(arr1))):
             dist += ((arr1[i] - arr2[i]) ** 2)
@@ -58,7 +62,8 @@ class Analyze:
                     self.add_to_dct(n, closest)
             else:
                 self.add_to_dct(closet_value_segment[0], closest)
-        print(sorted(closest.items(), key=lambda x: x[1], reverse=True)[0][0])
+        print(closest)
+        return sorted(closest.items(), key=lambda x: x[1], reverse=True)[0][0]
 
     def add_to_dct(self, value, dct:dict):
         if value in dct.keys():
@@ -78,6 +83,8 @@ class Analyze:
 
 
 if __name__ == '__main__':
+
+    # Segments
     inpt = np.array([
         [652, 718, 43, 87, 1.95, 52, 55],
         [643, 570, 32, 55, 2.11, 45, 49],
@@ -85,8 +92,14 @@ if __name__ == '__main__':
         [59, 570, 32, 40, 2.13, 41, 46]
         ]
     )
-    ppl = [509, 510, 66, 420, 7.13, 88, 10]
+    a = Categorizer(inpt)
 
+    euclid = a.calc_euclidian_on_between_segments()
 
-    a = Analyze(inpt)
-    a.segmentize_client(ppl)
+    print(f"Euclidian distance between segments is: {euclid}")
+
+    # New value
+    ppl = [49, 78, 48, 87, 1.95, 52, 55]
+
+    ans = a.segmentize_client(ppl)
+    print(f"Your list is closest to {ans + 1} segment and therefore is in that category")
