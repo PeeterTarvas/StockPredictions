@@ -1,6 +1,4 @@
-import numpy
 import numpy as np
-
 
 
 class Categorizer:
@@ -46,6 +44,9 @@ class Categorizer:
         return dist
 
     def segmentize_client(self, client_array):
+        """
+        Calculates to which segment does the client best fit into, client is a part of the normalization process in this function
+        """
         closest: dict = {}
         self.data = list(self.data)
         self.data.append(client_array)
@@ -56,7 +57,7 @@ class Categorizer:
         for i in list(range(len(self.data[0]))):
             col = np.asarray(self.data[:, i])
             closest_value = self.find_nearest(col, client[i])
-            closet_value_segment = list(numpy.where(col == closest_value))[0]
+            closet_value_segment = list(np.where(col == closest_value))[0]
             if len(closet_value_segment) > 1:
                 for n in closet_value_segment:
                     self.add_to_dct(n, closest)
@@ -65,13 +66,17 @@ class Categorizer:
         print(closest)
         return sorted(closest.items(), key=lambda x: x[1], reverse=True)[0][0]
 
-    def add_to_dct(self, value, dct:dict):
+    def add_to_dct(self, value, dct: dict):
+        """
+        Helper method to aad value to dictionary
+        """
         if value in dct.keys():
             dct[value] += 1
         else:
             dct[value] = 1
 
     def find_nearest(self, array, value):
+        """Finds the nearest value in np array to value"""
         array = np.asarray(array)
         idx = (np.abs(array - value)).argmin()
         return array[idx]
@@ -81,16 +86,14 @@ class Categorizer:
             print(list(i))
 
 
-
 if __name__ == '__main__':
-
     # Segments
     inpt = np.array([
         [652, 718, 43, 87, 1.95, 52, 55],
         [643, 570, 32, 55, 2.11, 45, 49],
         [49, 739, 48, 78, 1.97, 52, 50],
         [59, 570, 32, 40, 2.13, 41, 46]
-        ]
+    ]
     )
     a = Categorizer(inpt)
 
