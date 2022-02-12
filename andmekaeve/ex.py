@@ -1,61 +1,78 @@
 import psycopg2
-
-
-def create_connection_to_database():
-    conn = psycopg2.connect(dbname="postgres", user="pt", password="pt", host="localhost")
-    return conn
+import json
+import multiprocessing
+import copy
 
 
 
 class Data:
 
     def __init__(self):
-        self.connection = create_connection_to_database()
-        self.connection.autocommit = True
-        self.cursor = self.connection.cursor()
-        print(self.cursor)
+
+        # formatted "book1 book2": people count
+        self.people_that_own_same_book: dict = {}
+
+        self.dct_people: dict = {}
+        self.dct_book: dict = {}
+        self.book_set = set()
+        self.dicts = []
+        self.generate_database_table_content()
+
 
     def generate_database_table_content(self):
         data = open("/home/peeter/PycharmProjects/StockPredictions/andmekaeve/retail_data.txt", 'r')
-        print(data.readline())
         for line in data:
+            line = line.rstrip()
             line = line.split(",")
-            insert_statement = f"INSERT INTO peoplebooks (person_id, book_id) \
-                                    VALUES (CAST({line[0]} AS INTEGER), CAST({line[1]} AS INTEGER));"
-            print(insert_statement)
-            self.cursor.execute(insert_statement)
-        self.connection.commit()
+            self.add_to_ppl_dict(line)
+            self.add_to_books_dict(line)
 
-    def get_how_many_have_bought_both_books(self, book1, book2):
-        select_statement = f"WITH first AS ( \
-                                SELECT person_id, book_id AS first_book \
-                                FROM peoplebooks \
-                                WHERE book_id = {book1} \
-                                ), second AS ( \
-                                SELECT person_id, book_id AS second_book \
-                                FROM peoplebooks \
-                                WHERE book_id = {book2} \
-                                ) \
-                            SELECT COUNT(first.person_id) \
-                            FROM first, second \
-                            WHERE first.person_id = second.person_id;"
-        self.cursor.execute(select_statement)
-        return self.cursor.fetchone()[0]
+    def add_to_ppl_dict(self, line):
+        if line[0] in self.dct_people.keys():
+            self.dct_people[line[0]].add(line[1])
+        else:
+            self.dct_people[line[0]] = set(line[1])
 
-    def generate_grid_table(self):
-        all_books_ids = " SELECT book_id \
-                          FROM peoplebooks\
-                          GROUP BY book_id\
-                          ORDER BY book_id"
-        self.cursor.execute(all_books_ids)
-        ids = self.cursor.fetchall()
-        for i in ids:
-            i = i[0]
-            for j in ids[i + 1:]:
-                j = j[0]
+    def add_to_books_dict(self, line):
+        if line[1] in self.dct_book.keys():
+            self.dct_book[line[1]].add(line[0])
+        else:
+            self.dct_book[line[1]] = set(line[0])
 
-                print(f"{i}, {j}: {self.get_how_many_have_bought_both_books(i, j)}")
+    def find_how_many_people_have_read_both(self, book1: str, book2: str):
+        return len(self.dct_book[book1].intersection(self.dct_book[book2]))
 
+    def count_all_ob_on_book(self, book1, enum, dct: dict):
+        for book2 in list(self.dct_book.keys())[enum + 1:]:
+            intersection = self.find_how_many_people_have_read_both(book1, book2)
+            if intersection > 0:
+                dct[f"{book1} {book2}"] = intersection
+
+    def create_a_crossing_table(self):
+        dct: dict = {}
+        for enum, book1 in enumerate(self.dct_book.keys()):
+            self.count_all_ob_on_book(book1, enum, dct)
+            if (enum % 1000 == 0 and enum != 0) or enum == len(self.dct_book.keys()) - 1:
+                print(enum)
+                crosstable = open(f"/home/peeter/PycharmProjects/StockPredictions/andmekaeve/crosstables/{str(enum - 1000).zfill(4)}.json", 'w+')
+                dmp = json.dumps(dct)
+                crosstable.write(dmp)
+                dct.clear()
+                crosstable.close()
+
+    def bought_amnt_book(self, book1, book2):
+        book1 = str(book1)
+        book2 = str(book2)
+        strng = book1.rjust(4, "0")
+        json_filename = strng[0] + "000.json"
+        crosstable = open(f"/home/peeter/PycharmProjects/StockPredictions/andmekaeve/crosstables/" + json_filename, "r+")
+        dct: dict = json.loads(crosstable.readline())
+        query_str = book1 + " " + book2
+        try:
+            intersect = dct[query_str]
+            return f"{round(intersect / len(self.dct_book.get(book2)), 4) * 100}%"
+        except KeyError:
+            return "0%"
 
 
 
@@ -63,6 +80,6 @@ if __name__ == '__main__':
     # Link has to be in url format for instance jdbc:postgresql://localhost:5432/postgres
     data = Data()
     # data.generate_database_table_content()
-    # print(data.get_how_many_have_bought_both_books(10, 38))
-    print(data.generate_grid_table())
-
+    # a = data.find_how_many_people_have_read_both(1, 2)
+    # data.create_a_crossing_table()
+    print(data.bought_amnt_book(1000, 1082))
